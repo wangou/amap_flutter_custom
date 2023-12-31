@@ -107,6 +107,22 @@ class AMapController {
     return _methodChannel.moveCamera(cameraUpdate, mapId: mapId, animated: animated, duration: duration);
   }
 
+  ///开始移动
+  Future<void> movingMarker(int second,List<LatLng> points,int resume) {
+    return _methodChannel.movingMarker(second, points,resume,mapId: mapId);
+  }
+
+  ///停止移动
+  Future<void> stopMovingMarker() {
+    return _methodChannel.stopMovingMarker(mapId: mapId);
+  }
+
+  void setOnMovingListener(Function(double) callback){
+    _methodChannel.onMarkerMoving(mapId: mapId).listen((MarkerMovingEvent e) {
+      callback(e.value);
+    });
+  }
+
   ///设置地图每秒渲染的帧数
   Future<void> setRenderFps(int fps) {
     return _methodChannel.setRenderFps(fps, mapId: mapId);

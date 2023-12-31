@@ -2,6 +2,9 @@ package com.amap.flutter.map.core;
 
 import android.graphics.Bitmap;
 import android.location.Location;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Pair;
 
 
 import androidx.annotation.NonNull;
@@ -10,19 +13,27 @@ import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdate;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.TextureMapView;
+import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.CameraPosition;
 import com.amap.api.maps.model.CustomMapStyleOptions;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.LatLngBounds;
+import com.amap.api.maps.model.Marker;
+import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.maps.model.Poi;
+import com.amap.api.maps.utils.SpatialRelationUtil;
+import com.amap.api.maps.utils.overlay.MovingPointOverlay;
+import com.amap.flutter.amap_flutter_map.R;
 import com.amap.flutter.map.MyMethodCallHandler;
 import com.amap.flutter.map.utils.Const;
 import com.amap.flutter.map.utils.ConvertUtil;
 import com.amap.flutter.map.utils.LogUtil;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.flutter.plugin.common.MethodCall;
@@ -53,6 +64,8 @@ public class MapController
     private static final String CLASS_NAME = "MapController";
 
     private boolean mapLoaded = false;
+
+    private Handler mainHandler =new Handler(Looper.getMainLooper());
 
     public MapController(MethodChannel methodChannel, TextureMapView mapView) {
         this.methodChannel = methodChannel;
@@ -119,6 +132,19 @@ public class MapController
                     result.success(null);
                 }
                 break;
+            case Const.METHOD_MAP_MOVING_MARKER:
+                if (null != amap) {
+                    movingMarker(amap, (Integer) call.argument("second"), call.argument("points"), (Integer) call.argument("resume"));
+                    result.success(null);
+                }
+                break;
+            case Const.METHOD_MAP_STOP_MOVING_MARKER:
+                if (null != amap) {
+                    if (smoothMarker != null) {
+                        smoothMarker.stopMove();
+                    }
+                }
+                break;
             case Const.METHOD_MAP_TAKE_SNAPSHOT:
                 if (amap != null) {
                     final MethodChannel.Result _result = result;
@@ -150,6 +176,70 @@ public class MapController
                 break;
         }
 
+    }
+
+    private Marker marker;
+
+    private MovingPointOverlay smoothMarker;
+
+    private void movingMarker(final AMap amap, Integer second, Object arguments, Integer isResume) {
+        if (isResume == 1 && smoothMarker != null) {
+            smoothMarker.setTotalDuration(second);
+            smoothMarker.startSmoothMove();
+            return;
+        }
+        LogUtil.i(arguments.toString(), "movingMarker==>");
+        // 读取轨迹点
+        List<LatLng> points = new ArrayList<>();
+        List<List<Double>> datas = (List<List<Double>>) arguments;
+        for (List<Double> item : datas) {
+            points.add(new LatLng(item.get(0), item.get(1)));
+        }
+        LogUtil.i(datas.toString(), "movingMarkerDatas==>");
+// 实例 MovingPointOverlay 对象
+        if (smoothMarker == null) {
+            // 设置 平滑移动的 图标
+            marker = amap.addMarker(new MarkerOptions()
+                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.car_move))
+                    .anchor(0.5f, 0.5f));
+            smoothMarker = new MovingPointOverlay(amap, marker);
+            smoothMarker.setMoveListener(new MovingPointOverlay.MoveListener() {
+                @Override
+                public void move(double v) {
+//                    if (v==0){
+//                        smoothMarker.removeMarker();
+//                        marker.remove();
+//                        smoothMarker.destroy();
+//                        smoothMarker=null;
+//                        marker=null;
+//                    }
+                    if (null != methodChannel) {
+                        final Map<String, Object> arguments = new HashMap<String, Object>(2);
+                        arguments.put("v", v);
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                methodChannel.invokeMethod("marker#onMarkerMove", arguments);
+                            }
+                        });
+                        LogUtil.i(CLASS_NAME, "MakerMoveListener===>" + arguments);
+                    }
+                }
+            });
+        }
+
+// 取轨迹点的第一个点 作为 平滑移动的启动
+        LatLng drivePoint = points.get(0);
+        Pair<Integer, LatLng> pair = SpatialRelationUtil.calShortestDistancePoint(points, drivePoint);
+        points.set(pair.first, drivePoint);
+        List<LatLng> subList = points.subList(pair.first, points.size());
+
+// 设置轨迹点
+        smoothMarker.setPoints(subList);
+// 设置平滑移动的总时间  单位  秒
+        smoothMarker.setTotalDuration(second);
+// 开始移动
+        smoothMarker.startSmoothMove();
     }
 
     @Override

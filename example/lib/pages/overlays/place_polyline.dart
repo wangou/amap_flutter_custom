@@ -35,7 +35,10 @@ class _State extends State<_Body> {
   Map<String, Polyline> _polylines = <String, Polyline>{};
   String? selectedPolylineId;
 
-  void _onMapCreated(AMapController controller) {}
+  void _onMapCreated(AMapController controller) {
+    _add();
+    controller.movingMarker(60, _createPoints(),0);
+  }
 
   List<LatLng> _createPoints() {
     final List<LatLng> points = <LatLng>[];

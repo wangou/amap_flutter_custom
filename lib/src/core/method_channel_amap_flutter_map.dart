@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:amap_flutter_base/amap_flutter_base.dart';
 import 'package:amap_flutter_map/src/core/amap_flutter_platform.dart';
@@ -151,6 +150,10 @@ class MethodChannelAMapFlutterMap implements AMapFlutterPlatform {
     return _events(mapId).whereType<MarkerTapEvent>();
   }
 
+  Stream<MarkerMovingEvent> onMarkerMoving({required int mapId}) {
+    return _events(mapId).whereType<MarkerMovingEvent>();
+  }
+
   Stream<MarkerDragEndEvent> onMarkerDragEnd({required int mapId}) {
     return _events(mapId).whereType<MarkerDragEndEvent>();
   }
@@ -187,12 +190,19 @@ class MethodChannelAMapFlutterMap implements AMapFlutterPlatform {
         }
         break;
       case 'map#onTap':
-        _mapEventStreamController
-            .add(MapTapEvent(mapId, LatLng.fromJson(call.arguments['latLng'])!));
+        _mapEventStreamController.add(
+            MapTapEvent(mapId, LatLng.fromJson(call.arguments['latLng'])!));
         break;
       case 'map#onLongPress':
         _mapEventStreamController.add(MapLongPressEvent(
             mapId, LatLng.fromJson(call.arguments['latLng'])!));
+        break;
+
+      case 'marker#onMarkerMove':
+        _mapEventStreamController.add(MarkerMovingEvent(
+          mapId,
+          call.arguments['v'],
+        ));
         break;
 
       case 'marker#onTap':
@@ -213,8 +223,8 @@ class MethodChannelAMapFlutterMap implements AMapFlutterPlatform {
         break;
       case 'map#onPoiTouched':
         try {
-          _mapEventStreamController.add(
-              MapPoiTouchEvent(mapId, AMapPoi.fromJson(call.arguments['poi'])!));
+          _mapEventStreamController.add(MapPoiTouchEvent(
+              mapId, AMapPoi.fromJson(call.arguments['poi'])!));
         } catch (e) {
           print('map#onPoiTouched error===>' + e.toString());
         }
@@ -242,6 +252,20 @@ class MethodChannelAMapFlutterMap implements AMapFlutterPlatform {
         .invokeMethod<void>('map#setRenderFps', <String, dynamic>{
       'fps': fps,
     });
+  }
+
+  ///开始移动
+  Future<void> movingMarker(int second, List<LatLng> points,int resume,
+      {required int mapId}) {
+    final items =
+        points.map((latLng) => [latLng.latitude, latLng.longitude]).toList();
+    return channel(mapId).invokeMethod<void>('map#movingMarker',
+        <String, dynamic>{'second': second, 'points': items,"resume":resume});
+  }
+
+  Future<void> stopMovingMarker({required int mapId}) {
+    return channel(mapId)
+        .invokeMethod<void>('map#stopMovingMarker', <String, dynamic>{});
   }
 
   ///截屏

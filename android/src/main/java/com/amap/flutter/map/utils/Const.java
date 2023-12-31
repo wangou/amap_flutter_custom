@@ -16,6 +16,10 @@ public class Const {
     public static final String METHOD_MAP_UPDATE = "map#update";
     public static final String METHOD_MAP_MOVE_CAMERA = "camera#move";
     public static final String METHOD_MAP_SET_RENDER_FPS = "map#setRenderFps";
+
+    public static final String METHOD_MAP_MOVING_MARKER = "map#movingMarker";
+
+    public static final String METHOD_MAP_STOP_MOVING_MARKER = "map#stopMovingMarker";
     public static final String METHOD_MAP_TAKE_SNAPSHOT = "map#takeSnapshot";
     public static final String METHOD_MAP_CLEAR_DISK = "map#clearDisk";
 
@@ -26,6 +30,8 @@ public class Const {
             METHOD_MAP_UPDATE,
             METHOD_MAP_MOVE_CAMERA,
             METHOD_MAP_SET_RENDER_FPS,
+            METHOD_MAP_MOVING_MARKER,
+            METHOD_MAP_STOP_MOVING_MARKER,
             METHOD_MAP_TAKE_SNAPSHOT,
             METHOD_MAP_CLEAR_DISK};
 

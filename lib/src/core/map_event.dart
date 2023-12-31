@@ -55,6 +55,11 @@ class _PositionedMapEvent<T> extends MapEvent<T> {
   _PositionedMapEvent(int mapId, this.position, T value) : super(mapId, value);
 }
 
+/// [Marker] 的平滑移动事件
+class MarkerMovingEvent extends MapEvent<double> {
+  MarkerMovingEvent(int mapId, double distance) : super(mapId, distance);
+}
+
 /// [Marker] 的点击事件
 class MarkerTapEvent extends MapEvent<String> {
   MarkerTapEvent(int mapId, String markerId) : super(mapId, markerId);
