@@ -255,17 +255,33 @@ class MethodChannelAMapFlutterMap implements AMapFlutterPlatform {
   }
 
   ///开始移动
-  Future<void> movingMarker(int second, List<LatLng> points,int resume,
+  Future<void> movingMarker(int second, List<LatLng> points, int resume,
       {required int mapId}) {
     final items =
         points.map((latLng) => [latLng.latitude, latLng.longitude]).toList();
     return channel(mapId).invokeMethod<void>('map#movingMarker',
-        <String, dynamic>{'second': second, 'points': items,"resume":resume});
+        <String, dynamic>{'second': second, 'points': items, "resume": resume});
   }
 
+  ///停止移动
   Future<void> stopMovingMarker({required int mapId}) {
     return channel(mapId)
         .invokeMethod<void>('map#stopMovingMarker', <String, dynamic>{});
+  }
+
+
+  ///添加圆形覆盖物
+  Future<void> addCircle(LatLng point, double radius, {required int mapId}) {
+    return channel(mapId).invokeMethod<void>('map#addCircle', <String, dynamic>{
+      "point": [point.latitude, point.longitude],
+      "radius": radius
+    });
+  }
+
+  ///移除圆形覆盖物
+  Future<void> removeCircle({required int mapId}) {
+    return channel(mapId)
+        .invokeMethod<void>('map#removeCircle', <String, dynamic>{});
   }
 
   ///截屏

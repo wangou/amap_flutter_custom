@@ -1,11 +1,11 @@
 package com.amap.flutter.map.core;
 
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Pair;
-
 
 import androidx.annotation.NonNull;
 
@@ -15,6 +15,8 @@ import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.TextureMapView;
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.CameraPosition;
+import com.amap.api.maps.model.Circle;
+import com.amap.api.maps.model.CircleOptions;
 import com.amap.api.maps.model.CustomMapStyleOptions;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.LatLngBounds;
@@ -65,7 +67,7 @@ public class MapController
 
     private boolean mapLoaded = false;
 
-    private Handler mainHandler =new Handler(Looper.getMainLooper());
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public MapController(MethodChannel methodChannel, TextureMapView mapView) {
         this.methodChannel = methodChannel;
@@ -138,6 +140,18 @@ public class MapController
                     result.success(null);
                 }
                 break;
+            case Const.METHOD_MAP_ADD_CIRCLE:
+                if (null != amap) {
+                    addCircle(amap, call.argument("point"), (Double) call.argument("radius"));
+                    result.success(null);
+                }
+                break;
+            case Const.METHOD_MAP_REMOVE_CIRCLE:
+                if (null != amap) {
+                    removeCircle();
+                    result.success(null);
+                }
+                break;
             case Const.METHOD_MAP_STOP_MOVING_MARKER:
                 if (null != amap) {
                     if (smoothMarker != null) {
@@ -176,6 +190,28 @@ public class MapController
                 break;
         }
 
+    }
+
+    private Circle circle;
+
+    private void addCircle(AMap amap, Object point, Double radius) {
+        removeCircle();
+        List<Double> data = (List<Double>) point;
+        CircleOptions circleOptions = new CircleOptions();
+        circleOptions.center(new LatLng(data.get(0), data.get(1)));
+        circleOptions.fillColor(Color.argb(102, 129, 200, 128));
+        circleOptions.strokeColor(Color.argb(255, 0, 90, 255));
+        circleOptions.strokeWidth(2);
+        circleOptions.radius(radius);
+        circle = amap.addCircle(circleOptions);
+
+    }
+
+    private void removeCircle() {
+        if (circle != null) {
+            circle.remove();
+            circle = null;
+        }
     }
 
     private Marker marker;

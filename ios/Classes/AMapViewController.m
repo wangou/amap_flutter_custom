@@ -54,6 +54,7 @@
                     registrar:(NSObject<FlutterPluginRegistrar>*)registrar {
     if (self = [super init]) {
         NSAssert([args isKindOfClass:[NSDictionary class]], @"传参错误");
+        [[AMapServices sharedServices] setEnableHTTPS:YES];
         //构建methedChannel
         NSString* channelName =
         [NSString stringWithFormat:@"amap_flutter_map_%lld", viewId];

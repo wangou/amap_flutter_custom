@@ -1,23 +1,23 @@
 part of amap_flutter_map;
 
-final MethodChannelAMapFlutterMap _methodChannel = AMapFlutterPlatform.instance as MethodChannelAMapFlutterMap;
+final MethodChannelAMapFlutterMap _methodChannel = AMapFlutterPlatform
+    .instance as MethodChannelAMapFlutterMap;
 
 /// 地图通信中心
 class AMapController {
   final int mapId;
   final _MapState _mapState;
 
-  AMapController._(CameraPosition initCameraPosition, this._mapState, {required this.mapId}) {
+  AMapController._(CameraPosition initCameraPosition, this._mapState,
+      {required this.mapId}) {
     _connectStreams(mapId);
   }
 
   ///根据传入的id初始化[AMapController]
   /// 主要用于在[AMapWidget]初始化时在[AMapWidget.onMapCreated]中初始化controller
-  static Future<AMapController> init(
-    int id,
-    CameraPosition initialCameration,
-    _MapState mapState,
-  ) async {
+  static Future<AMapController> init(int id,
+      CameraPosition initialCameration,
+      _MapState mapState,) async {
     await _methodChannel.init(id);
     return AMapController._(
       initialCameration,
@@ -37,41 +37,50 @@ class AMapController {
     if (_mapState.widget.onLocationChanged != null) {
       _methodChannel
           .onLocationChanged(mapId: mapId)
-          .listen((LocationChangedEvent e) => _mapState.widget.onLocationChanged!(e.value));
+          .listen((LocationChangedEvent e) =>
+          _mapState.widget.onLocationChanged!(e.value));
     }
 
     if (_mapState.widget.onCameraMove != null) {
       _methodChannel
           .onCameraMove(mapId: mapId)
-          .listen((CameraPositionMoveEvent e) => _mapState.widget.onCameraMove!(e.value));
+          .listen((CameraPositionMoveEvent e) =>
+          _mapState.widget.onCameraMove!(e.value));
     }
     if (_mapState.widget.onCameraMoveEnd != null) {
       _methodChannel
           .onCameraMoveEnd(mapId: mapId)
-          .listen((CameraPositionMoveEndEvent e) => _mapState.widget.onCameraMoveEnd!(e.value));
+          .listen((CameraPositionMoveEndEvent e) =>
+          _mapState.widget.onCameraMoveEnd!(e.value));
     }
     if (_mapState.widget.onTap != null) {
-      _methodChannel.onMapTap(mapId: mapId).listen(((MapTapEvent e) => _mapState.widget.onTap!(e.value)));
+      _methodChannel.onMapTap(mapId: mapId).listen(
+          ((MapTapEvent e) => _mapState.widget.onTap!(e.value)));
     }
     if (_mapState.widget.onLongPress != null) {
       _methodChannel
           .onMapLongPress(mapId: mapId)
-          .listen(((MapLongPressEvent e) => _mapState.widget.onLongPress!(e.value)));
+          .listen(
+          ((MapLongPressEvent e) => _mapState.widget.onLongPress!(e.value)));
     }
 
     if (_mapState.widget.onPoiTouched != null) {
       _methodChannel
           .onPoiTouched(mapId: mapId)
-          .listen(((MapPoiTouchEvent e) => _mapState.widget.onPoiTouched!(e.value)));
+          .listen(
+          ((MapPoiTouchEvent e) => _mapState.widget.onPoiTouched!(e.value)));
     }
 
-    _methodChannel.onMarkerTap(mapId: mapId).listen((MarkerTapEvent e) => _mapState.onMarkerTap(e.value));
+    _methodChannel.onMarkerTap(mapId: mapId).listen((MarkerTapEvent e) =>
+        _mapState.onMarkerTap(e.value));
 
     _methodChannel
         .onMarkerDragEnd(mapId: mapId)
-        .listen((MarkerDragEndEvent e) => _mapState.onMarkerDragEnd(e.value, e.position));
+        .listen((MarkerDragEndEvent e) =>
+        _mapState.onMarkerDragEnd(e.value, e.position));
 
-    _methodChannel.onPolylineTap(mapId: mapId).listen((PolylineTapEvent e) => _mapState.onPolylineTap(e.value));
+    _methodChannel.onPolylineTap(mapId: mapId).listen((PolylineTapEvent e) =>
+        _mapState.onPolylineTap(e.value));
   }
 
   void disponse() {
@@ -103,13 +112,15 @@ class AMapController {
   ///可选属性[animated]用于控制是否执行动画移动
   ///
   ///可选属性[duration]用于控制执行动画的时长,默认250毫秒,单位:毫秒
-  Future<void> moveCamera(CameraUpdate cameraUpdate, {bool animated = true, int duration = 250}) {
-    return _methodChannel.moveCamera(cameraUpdate, mapId: mapId, animated: animated, duration: duration);
+  Future<void> moveCamera(CameraUpdate cameraUpdate,
+      {bool animated = true, int duration = 250}) {
+    return _methodChannel.moveCamera(
+        cameraUpdate, mapId: mapId, animated: animated, duration: duration);
   }
 
   ///开始移动
-  Future<void> movingMarker(int second,List<LatLng> points,int resume) {
-    return _methodChannel.movingMarker(second, points,resume,mapId: mapId);
+  Future<void> movingMarker(int second, List<LatLng> points, int resume) {
+    return _methodChannel.movingMarker(second, points, resume, mapId: mapId);
   }
 
   ///停止移动
@@ -117,7 +128,17 @@ class AMapController {
     return _methodChannel.stopMovingMarker(mapId: mapId);
   }
 
-  void setOnMovingListener(Function(double) callback){
+  ///添加圆形覆盖物
+  Future<void> addCircle(LatLng point, double radius) {
+    return _methodChannel.addCircle(point, radius, mapId: mapId);
+  }
+
+  ///移除圆形覆盖物
+  Future<void> removeCircle() {
+    return _methodChannel.removeCircle(mapId: mapId);
+  }
+
+  void setOnMovingListener(Function(double) callback) {
     _methodChannel.onMarkerMoving(mapId: mapId).listen((MarkerMovingEvent e) {
       callback(e.value);
     });
