@@ -26,6 +26,8 @@
 #import "AMapJsonUtils.h"
 #import "AMapConvertUtil.h"
 #import "FlutterMethodChannel+MethodCallDispatch.h"
+#import "AMapMarker.h"
+#import "CustomAnnotationView.h"
 
 @interface AMapViewController ()<MAMapViewDelegate>
 
@@ -42,6 +44,11 @@
 @property (nonatomic,assign) BOOL mapInitCompleted;//地图初始化完成，首帧回调的标记
 
 @property (nonatomic,assign) MAMapRect initLimitMapRect;//初始化时，限制的地图范围；如果为{0,0,0,0},则没有限制
+
+@property (nonatomic, strong) MAAnimatedAnnotation* annotation;
+@property (nonatomic, strong) MAAnnotationMoveAnimation* moveAnimation;
+@property (nonatomic, assign) NSInteger  passCount;
+@property (nonatomic, strong) MACircle* circle;
 
 @end
 
@@ -60,9 +67,9 @@
         [NSString stringWithFormat:@"amap_flutter_map_%lld", viewId];
         _channel = [FlutterMethodChannel methodChannelWithName:channelName
                                                binaryMessenger:registrar.messenger];
-        
+
         NSDictionary *dict = args;
-        
+
         NSDictionary *apiKey = dict[@"apiKey"];
         if (apiKey && [apiKey isKindOfClass:[NSDictionary class]]) {
             NSString *iosKey = apiKey[@"iosKey"];
@@ -72,17 +79,17 @@
         }
         //这里统一检查key的设置是否生效
         NSAssert(([AMapServices sharedServices].apiKey != nil), @"没有设置APIKey，请先设置key");
-        
+
         NSDictionary *cameraDict = [dict objectForKey:@"initialCameraPosition"];
         AMapCameraPosition *cameraPosition = [AMapJsonUtils modelFromDict:cameraDict modelClass:[AMapCameraPosition class]];
-        
+
         _viewId = viewId;
-        
+
         if ([dict objectForKey:@"privacyStatement"] != nil) {
             [self updatePrivacyStateWithDict:[dict objectForKey:@"privacyStatement"]];
         }
 
-        
+
         self.mapInitCompleted = NO;
         _mapView = [[MAMapView alloc] initWithFrame:frame];
         if (_mapView == nil && (MAMapVersionNumber) >= 80100) {
@@ -97,7 +104,7 @@
         if (MAMapRectIsEmpty(self.initLimitMapRect) == NO) {//限制了显示区域，则添加KVO监听
             [_mapView addObserver:self forKeyPath:@"frame" options:0 context:nil];
         }
-        
+
         _markerController = [[AMapMarkerController alloc] init:_channel
                                                        mapView:_mapView
                                                      registrar:registrar];
@@ -119,7 +126,7 @@
         if ([polygonsToAdd isKindOfClass:[NSArray class]]) {
             [_polygonsController addPolygons:polygonsToAdd];
         }
-        
+
         [self setMethodCallHandler];
     }
     return self;
@@ -235,7 +242,100 @@
         [weakSelf.mapView clearDisk];
         result(nil);
     }];
+
+    [self.channel addMethodName:@"map#movingMarker" withHandler:^(FlutterMethodCall * _Nonnull call, FlutterResult  _Nonnull result) {
+        NSLog(@"map#movingMarker:%@", call.arguments);
+        [weakSelf startMovingMakerWithSecond:[call.arguments[@"second"] floatValue] points:call.arguments[@"points"] resume:call.arguments[@"resume"]];
+        result(nil);
+    }];
+    [self.channel addMethodName:@"map#stopMovingMarker" withHandler:^(FlutterMethodCall * _Nonnull call, FlutterResult  _Nonnull result) {
+        [weakSelf stopMovingMarker];
+        result(nil);
+    }];
+    [self.channel addMethodName:@"map#addCircle" withHandler:^(FlutterMethodCall * _Nonnull call, FlutterResult  _Nonnull result) {
+        [weakSelf addCircleWithPoint:call.arguments[@"point"] radius:call.arguments[@"radius"]];
+        result(nil);
+    }];
+    [self.channel addMethodName:@"map#removeCircle" withHandler:^(FlutterMethodCall * _Nonnull call, FlutterResult  _Nonnull result) {
+        [weakSelf removeCircle];
+        result(nil);
+    }];
 }
+
+- (void)removeCircle {
+    if(self.circle!=nil){
+        [_mapView removeOverlay:self.circle];
+        _circle=nil;
+    }
+}
+
+- (void)addCircleWithPoint:(id)point radius:(id)radius {
+    NSArray<NSNumber *> *data=point;
+    //构造圆
+    _circle = [MACircle circleWithCenterCoordinate:CLLocationCoordinate2DMake(data[0].doubleValue, data[1].doubleValue) radius:[radius doubleValue]];
+    //在地图上添加圆
+    [_mapView addOverlay:_circle ];
+}
+
+- (void)stopMovingMarker {
+    if(self.moveAnimation!=nil){
+        _passCount=self.moveAnimation.passedPointCount;
+        [self.moveAnimation cancel];
+    }
+}
+
+- (void)startMovingMakerWithSecond:(CGFloat)second points:(id)points resume:(id)resume {
+    __weak __typeof__(self) weakSelf = self;
+    NSArray<NSArray<NSNumber *> *> *listOfCoordinates=points;
+    // 准备一个 CLLocationCoordinate2D 类型的数组来存储转换后的坐标
+
+    NSUInteger start= 0;
+    if([resume intValue]==1 && self.passCount>0 && self.passCount<listOfCoordinates.count){
+        start= (NSUInteger) self.passCount;
+    }
+    listOfCoordinates= [listOfCoordinates subarrayWithRange:NSMakeRange(start,listOfCoordinates.count-start)];
+
+    NSLog(@"movingStart%ld",start);
+
+    CLLocationCoordinate2D coordinates[listOfCoordinates.count];
+
+// 遍历列表并转换
+    for (NSUInteger i=0; i < listOfCoordinates.count; i++) {
+        NSArray<NSNumber *> *latLon = listOfCoordinates[i];
+        if (latLon.count == 2) {
+            coordinates[i] = CLLocationCoordinate2DMake(latLon[0].doubleValue, latLon[1].doubleValue);
+        }
+    }
+
+// 现在 'coordinates' 数组包含了 CLLocationCoordinate2D 结构
+    if([resume intValue]!=1 || self.moveAnimation==nil){
+        self.annotation.coordinate=coordinates[0];
+    }
+
+    NSLog(@"count:%ld",sizeof(coordinates));
+    [self stopMovingMarker];
+    self.moveAnimation= [self.annotation addMoveAnimationWithKeyCoordinates:coordinates count:listOfCoordinates.count withDuration:second withName:nil completeCallback:^(BOOL isFinished) {
+        NSLog(@"completeCallback:%d",isFinished);
+    } stepCallback:^(MAAnnotationMoveAnimation *currentAni) {
+        NSLog(@"stepCallback:%.2f",currentAni.elapsedTime);
+        [weakSelf.channel invokeMethod:@"marker#onMarkerMove" arguments:@{@"v": @(second-currentAni.elapsedTime)}];
+    }];
+}
+
+- (MAAnimatedAnnotation *)annotation
+{
+    if(_annotation==nil){
+        MAAnimatedAnnotation *anno = [[MAAnimatedAnnotation alloc] initWithMarkerId:@"MAAnimatedAnnotation"];
+        self.annotation = anno;
+
+        [self.mapView addAnnotation:self.annotation];
+    }
+    return _annotation;
+}
+
+
+
+//- (void)movingMarker()
 
 //MARK: MAMapViewDelegate
 
@@ -326,7 +426,33 @@
     if (fAnno.markerId == nil) {
         return nil;
     }
+    if([fAnno.markerId isEqualToString: @"MAAnimatedAnnotation"]){
+        NSString *pointReuseIndetifier = @"myReuseIndetifier";
+        MAAnnotationView *annotationView = (MAPinAnnotationView*)[mapView dequeueReusableAnnotationViewWithIdentifier:pointReuseIndetifier];
+        if (annotationView == nil)
+        {
+            annotationView = [[MAAnnotationView alloc] initWithAnnotation:annotation
+                                                          reuseIdentifier:pointReuseIndetifier];
+
+            UIImage *imge  =  [UIImage imageNamed:@"car_move"];
+            annotationView.image =  imge;
+        }
+
+        annotationView.canShowCallout               = NO;
+        annotationView.draggable                    = NO;
+        annotationView.rightCalloutAccessoryView    = [UIButton buttonWithType:UIButtonTypeDetailDisclosure];
+
+        return annotationView;
+    }
     AMapMarker *marker = [_markerController markerForId:fAnno.markerId];
+    if([marker.icon.firstObject isEqual: @"fromCustom"]){
+        CustomAnnotationView *view = (CustomAnnotationView *) [mapView dequeueReusableAnnotationViewWithIdentifier:AMapFlutterCustomAnnotationViewIdentifier];
+        if (view == nil) {
+            view = [[CustomAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:AMapFlutterCustomAnnotationViewIdentifier];
+        }
+        [view updateViewWithMarker:marker];
+        return view;
+    }
     //    TODO: 这里只实现基础AnnotationView，不再根据marker的数据差异，区分是annotationView还是pinAnnotationView了；
     MAAnnotationView *view = [mapView dequeueReusableAnnotationViewWithIdentifier:AMapFlutterAnnotationViewIdentifier];
     if (view == nil) {
@@ -425,6 +551,13 @@
         MAPolygonRenderer *polygonRenderer = [[MAPolygonRenderer alloc] initWithPolygon:polygon];
         [polygonRenderer updateRenderWithPolygon:fPolygon];
         return polygonRenderer;
+    }else if ([overlay isKindOfClass:[MACircle class]]) {
+        MACircleRenderer *circleRenderer = [[MACircleRenderer alloc] initWithCircle:overlay];
+
+        circleRenderer.lineWidth    = 2.f;
+        circleRenderer.strokeColor  = [UIColor colorWithRed:0 green:90/255.0 blue:1 alpha:1];
+        circleRenderer.fillColor    = [UIColor colorWithRed:129/255.0 green:200/255.0 blue:128/255.0 alpha:102/255.0];
+        return circleRenderer;
     } else {
         return nil;
     }

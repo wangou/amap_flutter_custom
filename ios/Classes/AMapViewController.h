@@ -18,6 +18,13 @@ NS_ASSUME_NONNULL_BEGIN
                     arguments:(id _Nullable)args
                     registrar:(NSObject<FlutterPluginRegistrar>*)registrar;
 
+- (void)startMovingMakerWithSecond:(CGFloat)second points:(id)points resume:(id)resume;
+
+- (void)stopMovingMarker;
+
+- (void)addCircleWithPoint:(id)point radius:(id)radius;
+
+- (void)removeCircle;
 @end
 
 NS_ASSUME_NONNULL_END

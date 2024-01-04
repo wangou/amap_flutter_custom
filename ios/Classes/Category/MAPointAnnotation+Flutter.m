@@ -9,6 +9,7 @@
 #import <objc/runtime.h>
 
 NSString *const AMapFlutterAnnotationViewIdentifier = @"AMapFlutterAnnotationViewIdentifier";
+NSString *const AMapFlutterCustomAnnotationViewIdentifier = @"AMapFlutterCustomAnnotationViewIdentifier";
 
 @implementation MAPointAnnotation (Flutter)
 

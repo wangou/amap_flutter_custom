@@ -8,6 +8,7 @@
 #import "MAAnnotationView+Flutter.h"
 #import "AMapMarker.h"
 #import "AMapInfoWindow.h"
+#import "CustomAnnotationView.h"
 
 @implementation MAAnnotationView (Flutter)
 
@@ -16,14 +17,19 @@
         return;
     }
     self.alpha = marker.alpha;
-    self.image = marker.image;
-    //anchor变换成地图centerOffset
-    if (self.image) {
-        CGSize imageSize = self.image.size;
-        //iOS的annotationView的中心默认位于annotation的坐标位置,对应的锚点为（0.5，0.5）
-        CGFloat offsetW = imageSize.width * (0.5 - marker.anchor.x);
-        CGFloat offsetH = imageSize.height * (0.5 - marker.anchor.y);
-        self.centerOffset = CGPointMake(offsetW, offsetH);
+    if([self isKindOfClass:[CustomAnnotationView class]]){
+        CustomAnnotationView *cus=self;
+        cus.name=marker.icon[1];
+    } else{
+        self.image = marker.image;
+        //anchor变换成地图centerOffset
+        if (self.image) {
+            CGSize imageSize = self.image.size;
+            //iOS的annotationView的中心默认位于annotation的坐标位置,对应的锚点为（0.5，0.5）
+            CGFloat offsetW = imageSize.width * (0.5 - marker.anchor.x);
+            CGFloat offsetH = imageSize.height * (0.5 - marker.anchor.y);
+            self.centerOffset = CGPointMake(offsetW, offsetH);
+        }
     }
     self.enabled = marker.clickable;
     self.draggable = marker.draggable;

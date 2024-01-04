@@ -12,6 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// AnnotationView的复用标识
 extern NSString *const AMapFlutterAnnotationViewIdentifier;
 
+/// CustomAnnotationView的复用标识
+extern NSString *const AMapFlutterCustomAnnotationViewIdentifier;
+
 /// 该拓展类型主要用于对地图原PointAnnotation添加一个唯一id,
 /// 便于在地图回调代理中，通过id快速找到对应的AMapMarker对象，
 /// 以此来构建对应的MAAnnotatioView
