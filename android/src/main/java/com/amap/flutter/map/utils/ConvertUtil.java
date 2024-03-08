@@ -3,7 +3,10 @@ package com.amap.flutter.map.utils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -400,6 +403,29 @@ public class ConvertUtil {
                 ViewGroup view = (ViewGroup) LayoutInflater.from(sContext).inflate(R.layout.cutom_marker, null);
                 TextView carNum = view.findViewById(R.id.tv_car_num);
                 ImageView carIcon = view.findViewById(R.id.iv_car);
+                GradientDrawable gradientDrawable=new GradientDrawable();
+                gradientDrawable.setCornerRadius(100);
+                gradientDrawable.setColor(Color.parseColor("#38BD4E"));
+                if("1".equals(data.get(2).toString())){
+                    gradientDrawable.setColor(Color.parseColor("#38BD4E"));
+                    carIcon.setImageResource(R.mipmap.car_green);
+                }else if("2".equals(data.get(2).toString())){
+                    gradientDrawable.setColor(Color.parseColor("#999999"));
+                    carIcon.setImageResource(R.mipmap.car_gray);
+                }else if("3".equals(data.get(2).toString())){
+                    gradientDrawable.setColor(Color.parseColor("#E64CF8"));
+                    carIcon.setImageResource(R.mipmap.car_purple);
+                }else if("4".equals(data.get(2).toString())){
+                    gradientDrawable.setColor(Color.parseColor("#C1333D"));
+                    carIcon.setImageResource(R.mipmap.car_red);
+                }else if("5".equals(data.get(2).toString())){
+                    gradientDrawable.setColor(Color.parseColor("#3ECAF6"));
+                    carIcon.setImageResource(R.mipmap.car_blue);
+                }else if("6".equals(data.get(2).toString())){
+                    gradientDrawable.setColor(Color.parseColor("#FAC251"));
+                    carIcon.setImageResource(R.mipmap.car_yellow);
+                }
+                carNum.setBackground(gradientDrawable);
                 carNum.setText(data.get(1).toString());
                 return BitmapDescriptorFactory.fromView(view);
             default:

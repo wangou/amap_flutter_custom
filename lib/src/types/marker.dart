@@ -85,7 +85,7 @@ class Marker extends BaseOverlay {
     this.clickable = true,
     this.draggable = false,
     this.icon = BitmapDescriptor.defaultMarker,
-    this.infoWindowEnable = true,
+    this.infoWindowEnable = false,
     this.infoWindow = InfoWindow.noText,
     this.rotation = 0.0,
     this.visible = true,
