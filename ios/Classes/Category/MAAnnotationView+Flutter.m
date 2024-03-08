@@ -20,6 +20,7 @@
     if([self isKindOfClass:[CustomAnnotationView class]]){
         CustomAnnotationView *cus=self;
         cus.name=marker.icon[1];
+        cus.iconType=marker.icon[2];
     } else{
         self.image = marker.image;
         //anchor变换成地图centerOffset

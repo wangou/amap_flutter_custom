@@ -48,6 +48,32 @@
     self.nameLabel.frame = labelFrame;
 }
 
+- (void) setIconType:(NSString *)iconType{
+    self.nameLabel.layer.cornerRadius = 10; // 设置圆角
+    self.nameLabel.layer.borderColor=[UIColor blackColor].CGColor;
+    self.nameLabel.layer.borderWidth=0.5;
+    if([iconType isEqual: @"1"]){
+        self.nameLabel.backgroundColor= [self colorWithHexString:@"#38BD4E"];
+        self.portrait=[UIImage imageNamed:@"20-car1"];
+    }else if([iconType isEqual: @"2"]){
+        self.nameLabel.backgroundColor= [self colorWithHexString:@"#999999"];
+        self.portrait=[UIImage imageNamed:@"20-car3"];
+    }else if([iconType isEqual: @"3"]){
+        self.nameLabel.backgroundColor= [self colorWithHexString:@"#E64CF8"];
+        self.portrait=[UIImage imageNamed:@"20-car2"];
+    }else if([iconType isEqual: @"4"]){
+        self.nameLabel.backgroundColor= [self colorWithHexString:@"#C1333D"];
+        self.portrait=[UIImage imageNamed:@"20-car4"];
+    }else if([iconType isEqual: @"5"]){
+        self.nameLabel.backgroundColor= [self colorWithHexString:@"#3ECAF6"];
+        self.portrait=[UIImage imageNamed:@"20-car5"];
+    }else if([iconType isEqual: @"6"]){
+        self.nameLabel.backgroundColor= [self colorWithHexString:@"#FAC251"];
+        self.portrait=[UIImage imageNamed:@"20-car6"];
+    }
+    self.nameLabel.layer.masksToBounds = YES;
+}
+
 - (UIImage *)portrait
 {
     return self.portraitImageView.image;
@@ -129,7 +155,7 @@
     return self;
 }
 
-+ (UIColor *)colorWithHexString:(NSString *)hexString {
+- (UIColor *)colorWithHexString:(NSString *)hexString {
     unsigned rgbValue = 0;
     NSScanner *scanner = [NSScanner scannerWithString:hexString];
     [scanner setScanLocation:1]; // bypass '#' character
